@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use App\Models\Business;
+use App\Models\User;
 use App\Models\Category;
 
 class BusinessSeeder extends Seeder
@@ -15,16 +15,27 @@ class BusinessSeeder extends Seeder
      */
     public function run(): void
     {
-         $categories = Category::all();
+        $categories = Category::inRandomOrder()->take(2)->get();
+        $user = User::inRandomOrder()->first(); // Ambil satu user random
 
-        foreach (range(1, 2) as $i) {
-            $category = $categories->random(); // ambil acak dari category yang sudah ada
-
-            Business::create([
-                'id' => Str::uuid(),
-                'category_id' => $category->id,
-                'name' => "Business $i",
-            ]);
+        // Jika tidak ada kategori atau user, hentikan seed
+        if ($categories->count() < 2 || !$user) {
+            $this->command->warn("Seeder dihentikan: tidak cukup data kategori atau user.");
+            return;
         }
+
+        Business::create([
+            'id' => Str::uuid(),
+            'user_id' => $user->id,
+            'category_id' => $categories[0]->id,
+            'name' => "Chickenroll",
+        ]);
+
+        Business::create([
+            'id' => Str::uuid(),
+            'user_id' => $user->id,
+            'category_id' => $categories[1]->id,
+            'name' => "Kopi Nusantara",
+        ]);
     }
 }

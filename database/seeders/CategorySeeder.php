@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Category;
 use Illuminate\Support\Str;
@@ -14,10 +13,21 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (range(1, 5) as $i) {
+        $categories = [
+            "UMKM",
+            "Perkebunan",
+            "Coffe Shop",
+            "Toko",
+            "Perikanan",
+            "Pengepul",
+            "Sorum",
+            "Konter Elektronik (HP, dll)",
+        ];
+
+        foreach ($categories as $name) {
             Category::create([
                 'id' => Str::uuid(),
-                'name' => "Category $i",
+                'name' => $name,
             ]);
         }
     }
