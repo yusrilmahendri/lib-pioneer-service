@@ -125,12 +125,12 @@ class BusinessResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
-                    ->date('d/m/Y')
+                   ->dateTime('d M Y, H:i')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diubah')
-                    ->date('d/m/Y')
+                   ->dateTime('d M Y, H:i')
                     ->sortable(),
             ])
             ->filters([
@@ -143,9 +143,7 @@ class BusinessResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+             Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
