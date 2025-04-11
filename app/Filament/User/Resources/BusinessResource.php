@@ -3,41 +3,83 @@
 namespace App\Filament\User\Resources;
 
 use App\Filament\User\Resources\BusinessResource\Pages;
-use App\Filament\User\Resources\BusinessResource\RelationManagers;
 use App\Models\Business;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Notifications\Notification;
 use App\Models\Category;
-use App\Models\User;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Actions\Action;
+use Filament\Forms\Components\Actions\ActionException;
 
 class BusinessResource extends Resource
 {
     protected static ?string $model = Business::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\Section::make('Informasi Usaha')
-                    ->description('Silakan perbarui informasi usaha Anda.')
+                    ->description(fn($livewire) =>
+                        $livewire->getRecord()
+                            ? 'Silakan perbarui informasi usaha Anda.'
+                            : 'Silakan daftar informasi usaha Anda.'
+                    )
                     ->icon('heroicon-o-briefcase')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('category_id')
+                                Select::make('category_id')
                                     ->label('Kategori')
                                     ->relationship('category', 'name')
+                                    ->helperText('🔔 Tidak menemukan kategori usaha Anda? Klik tombol + untuk menambah kategori baru.')
                                     ->searchable()
                                     ->preload()
-                                    ->required(),
+                                    ->required()
+                                    ->createOptionForm([
+                                        TextInput::make('name')
+                                            ->label('Nama Kategori')
+                                            ->required()
+                                            ->maxLength(255),
+                                    ])
+                                    ->createOptionAction(function (Action $action) {
+                                        return $action
+                                            ->label('Daftar kategori berdasarkan usaha anda')
+                                            ->modalHeading('Daftar Kategori Baru')
+                                            ->modalButton('Simpan')
+                                            ->action(function (array $data, Select $component): void {
+                                                $exists = Category::whereRaw('LOWER(name) = ?', [strtolower($data['name'])])->exists();
 
-                                Forms\Components\TextInput::make('name')
+                                                if ($exists) {
+                                                    Notification::make()
+                                                        ->title('Maaf, kategori usaha Anda sudah terdaftar.')
+                                                        ->danger()
+                                                        ->send();
+
+                                                    return; // Kembalikan tanpa lempar exception, modal tetap terbuka
+                                                }
+
+                                                $category = Category::create([
+                                                    'name' => $data['name'],
+                                                ]);
+
+                                                $component->state($category->getKey());
+
+                                                Notification::make()
+                                                    ->title('Kategori berhasil didaftarkan.')
+                                                    ->success()
+                                                    ->send();
+                                            });
+                                    }),
+                                    
+                                TextInput::make('name')
                                     ->label('Nama Usaha')
                                     ->required()
                                     ->maxLength(255),
@@ -50,7 +92,7 @@ class BusinessResource extends Resource
                     ->description('Usaha ini dimiliki oleh')
                     ->icon('heroicon-o-user')
                     ->schema([
-                   Forms\Components\Placeholder::make('Pemilik')
+                        Forms\Components\Placeholder::make('Pemilik')
                             ->content(auth()->user()->name)
                             ->label('Nama pemilik')
                             ->disabled()
@@ -61,7 +103,6 @@ class BusinessResource extends Resource
                     ->collapsed(),
             ]);
     }
-
 
     public static function table(Table $table): Table
     {
@@ -84,16 +125,15 @@ class BusinessResource extends Resource
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
-                    ->date('d/m/Y') // format dd/mm/yyyy
-                    ->sortable(), // jangan toggleable
+                    ->date('d/m/Y')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diubah')
-                    ->date('d/m/Y') // format dd/mm/yyyy
-                    ->sortable(), // jangan toggleable
+                    ->date('d/m/Y')
+                    ->sortable(),
             ])
             ->filters([
-                // contoh filter by kategori (optional)
                 Tables\Filters\SelectFilter::make('category_id')
                     ->label('Kategori')
                     ->relationship('category', 'name')
@@ -111,14 +151,12 @@ class BusinessResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->hasRole('user'); // atau pengecekan sesuai guard kamu
+        return auth()->user()?->hasRole('user');
     }
 
     public static function getPages(): array
