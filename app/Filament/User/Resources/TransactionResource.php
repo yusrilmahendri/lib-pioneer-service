@@ -9,10 +9,14 @@ use Filament\Tables;
 use Filament\Resources\Resource;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Card;
+use Illuminate\Support\Str;
+use Filament\Forms\Components\TextInput\Mask;
 use App\Filament\User\Resources\TransactionResource\Pages;
 use App\Filament\User\Resources\TransactionResource\Widgets\TransactionPeriodSummary;
 
@@ -27,32 +31,50 @@ class TransactionResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('businesses_id')
-                    ->label('Usaha')
-                    ->relationship('busines', 'name')
-                    ->searchable()
-                    ->required(),
+                Card::make()
+                    ->label('Form Transaksi') // Menambahkan label untuk card
+                    ->schema([
+                        Select::make('businesses_id')
+                            ->label('Usaha')
+                            ->relationship('business', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->columnSpanFull(),
 
-                Select::make('type_transaction')
-                    ->label('Tipe Transaksi')
-                    ->options([
-                        'income' => 'Pemasukan',
-                        'outcome' => 'Pengeluaran',
+                        Select::make('type_transaction')
+                            ->label('Tipe Transaksi')
+                            ->options([
+                                'income' => 'Pemasukan',
+                                'outcome' => 'Pengeluaran',
+                            ])
+                            ->required()
+                            ->columnSpanFull(),
+
+                         TextInput::make('amount')
+                            ->label('Jumlah transaksi')
+                            ->numeric()
+                            ->required()
+                            ->prefix('Rp.')
+                            ->prefixIcon('heroicon-o-currency-dollar')
+                            ->columnSpanFull(),
+                         
+
+                        Textarea::make('descriptions')
+                            ->label('Deskripsi')
+                            ->autosize()
+                            ->rows(5)
+                            ->maxLength(1000)
+                            ->required()
+                            ->columnSpanFull(),
                     ])
-                    ->required(),
-
-                TextInput::make('amount')
-                    ->label('Jumlah')
-                    ->numeric()
-                    ->required(),
-
-                Textarea::make('descriptions')
-                    ->label('Deskripsi')
-                    ->required(),
-            ]);
+                    ->collapsible() // Optional: agar card bisa di-collapse
+                    ->collapsed(false) // Optional: agar card tidak dalam keadaan collapse
+            ])
+            ->columns(2); // Optional: bikin layout 2 kolom
+            
     }
 
-    
     public static function table(Table $table): Table
     {
         return $table

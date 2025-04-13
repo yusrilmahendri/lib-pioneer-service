@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Business;
 
@@ -11,6 +12,23 @@ class Transaction extends Model
 {
     use HasFactory;
     protected $guarded = [''];
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected static function booted()
+    {
+        static::creating(function ($transaction) {
+            // Automatically generate UUID for `id` if not provided
+            if (!$transaction->id) {
+                $transaction->id = (string) Str::uuid();
+            }
+
+            // Set `user_id` to the currently logged-in user's ID
+            if (!$transaction->user_id) {
+                $transaction->user_id = auth()->id(); // Assuming the user is logged in
+            }
+        });
+    }
 
     public function user(){
         return $this->belongsTo(User::class);
