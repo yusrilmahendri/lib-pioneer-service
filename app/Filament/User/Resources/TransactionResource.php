@@ -14,9 +14,11 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\Card;
 use Illuminate\Support\Str;
 use Filament\Forms\Components\TextInput\Mask;
+use Filament\Tables\Filters\SelectFilter;
 use App\Filament\User\Resources\TransactionResource\Pages;
 use App\Filament\User\Resources\TransactionResource\Widgets\TransactionPeriodSummary;
 
@@ -86,26 +88,34 @@ class TransactionResource extends Resource
                             return $rowLoop->iteration;
                         }
                     ),
-
                 Tables\Columns\TextColumn::make('business.name')
                     ->label('Usaha'),
-
                 Tables\Columns\TextColumn::make('type_transaction')
-                    ->label('Tipe'),
-
+                    ->label('Tipe transaksi')
+                    ->getStateUsing(function ($record) {
+                            // Mengubah nilai 'income' dan 'expense' menjadi 'Pemasukan' dan 'Pengeluaran'
+                            return $record->type_transaction === 'income' ? 'Pemasukan' : 
+                                ($record->type_transaction === 'outcome' ? 'Pengeluaran' : $record->type_transaction);
+                        }),
                 Tables\Columns\TextColumn::make('amount')
                     ->money('Rp.', true),
-
                 Tables\Columns\TextColumn::make('descriptions')
-                    ->label('Deskripsi')->wrap() // supaya bisa lebih dari 1 baris
+                    ->label('Deskripsi')->wrap()
                     ->limit(null)
                     ->searchable(),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->dateTime('d M Y, H:i'),
             ])
-            ->filters([])
+            ->filters([
+                SelectFilter::make('type_transaction')
+                    ->label('Tipe Transaksi')
+                    ->options([
+                        'income' => 'Pemasukan',
+                        'outcome' => 'Pengeluaran',
+                    ])
+                    ->searchable(),
+            ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
